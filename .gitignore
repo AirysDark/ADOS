@@ -1,0 +1,4 @@
+/.cache/
+/output/
+*.img
+*.img.xz
