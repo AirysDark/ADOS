@@ -1,0 +1,17 @@
+#!/bin/sh
+
+case "$1" in
+  start)
+    echo "Starting ADOS..."
+    mkdir -p /run/ados
+    /usr/bin/ados-info > /run/ados/boot-info 2>/dev/null || true
+    ;;
+  stop)
+    ;;
+  restart)
+    "$0" stop
+    "$0" start
+    ;;
+esac
+
+exit 0
