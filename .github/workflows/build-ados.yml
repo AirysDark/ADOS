@@ -1,0 +1,89 @@
+name: Build ADOS images
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target to build"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - rpi3-32
+          - rpi3-64
+          - rpi3bplus-32
+          - rpi3bplus-64
+          - rpi4-32
+          - rpi4-64
+  push:
+    branches: [main]
+    paths:
+      - "kernel/**"
+      - "board/**"
+      - "configs/**"
+      - "cli/**"
+      - "scripts/**"
+      - ".github/workflows/build-ados.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.targets.outputs.matrix }}
+    steps:
+      - id: targets
+        shell: bash
+        env:
+          REQUESTED: ${{ github.event.inputs.target || 'all' }}
+        run: |
+          if [ "$REQUESTED" = "all" ]; then
+            echo 'matrix=["rpi3-32","rpi3-64","rpi3bplus-32","rpi3bplus-64","rpi4-32","rpi4-64"]' >> "$GITHUB_OUTPUT"
+          else
+            printf 'matrix=["%s"]\n' "$REQUESTED" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout ADOS
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git curl wget rsync file bc bison flex libssl-dev libncurses-dev cpio unzip python3 patch xz-utils
+
+      - name: Cache Buildroot downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: ados-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/build-ados.sh', 'kernel/**', 'board/**') }}
+          restore-keys: |
+            ados-${{ runner.os }}-${{ matrix.target }}-
+
+      - name: Build ADOS
+        run: |
+          chmod +x scripts/build-ados.sh
+          find board/raspberrypi/common/rootfs-overlay/etc/init.d -type f -exec chmod +x {} +
+          find board/raspberrypi/common/rootfs-overlay/usr/bin -type f -exec chmod +x {} +
+          ./scripts/build-ados.sh "${{ matrix.target }}"
+
+      - name: Upload image
+        uses: actions/upload-artifact@v4
+        with:
+          name: ADOS-${{ matrix.target }}
+          path: |
+            output/ADOS-${{ matrix.target }}.img.xz
+            output/ADOS-${{ matrix.target }}.img.xz.sha256
+          if-no-files-found: error
+          retention-days: 14
