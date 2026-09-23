@@ -9,6 +9,7 @@ ADOS deliberately has no desktop environment, X11 or Wayland user session. HDMI 
 | Board | ARM32 | ARM64 |
 |---|---|---|
 | Raspberry Pi 3 Model B | Yes | Yes |
+| Raspberry Pi 3 Model B + BCM2837B0 SoC | Yes | Yes |
 | Raspberry Pi 3 Model B+ | Yes | Yes |
 | Raspberry Pi 3 silicon/component variants | Yes | Yes |
 | Raspberry Pi 4 Model B | Yes | Yes |
@@ -50,6 +51,8 @@ The project does not intend to rewrite Linux from scratch. ADOS owns the configu
 ```text
 ados_rpi3_32
 ados_rpi3_64
+ados_rpi3b_b0_32
+ados_rpi3b_b0_64
 ados_rpi3bplus_32
 ados_rpi3bplus_64
 ados_rpi4_32
@@ -61,6 +64,8 @@ Expected artifacts:
 ```text
 ADOS-RPi3-arm32.img.xz
 ADOS-RPi3-arm64.img.xz
+ADOS-rpi3b-b0-32.img.xz
+ADOS-rpi3b-b0-64.img.xz
 ADOS-RPi3BPlus-arm32.img.xz
 ADOS-RPi3BPlus-arm64.img.xz
 ADOS-RPi4-arm32.img.xz
