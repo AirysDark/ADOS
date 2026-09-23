@@ -1,0 +1,27 @@
+#!/bin/sh
+
+model="unknown"
+revision="unknown"
+serial="unknown"
+soc="unknown"
+
+if [ -r /proc/device-tree/model ]; then
+    model="$(tr -d '\000' < /proc/device-tree/model)"
+fi
+
+if [ -r /proc/cpuinfo ]; then
+    revision="$(awk -F ': ' '/^Revision/ {print $2; exit}' /proc/cpuinfo)"
+    serial="$(awk -F ': ' '/^Serial/ {print $2; exit}' /proc/cpuinfo)"
+    soc="$(awk -F ': ' '/^Hardware/ {print $2; exit}' /proc/cpuinfo)"
+fi
+
+echo "ADOS system information"
+echo "-----------------------"
+echo "Model        : ${model:-unknown}"
+echo "Revision     : ${revision:-unknown}"
+echo "Hardware/SoC : ${soc:-unknown}"
+echo "Architecture : $(uname -m)"
+echo "Kernel       : $(uname -r)"
+echo "Serial       : ${serial:-unknown}"
+echo "Hostname     : $(hostname)"
+echo "Uptime       : $(cut -d. -f1 /proc/uptime 2>/dev/null || echo unknown) seconds"
