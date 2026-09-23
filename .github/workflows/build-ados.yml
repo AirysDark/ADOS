@@ -12,6 +12,8 @@ on:
           - all
           - rpi3-32
           - rpi3-64
+          - rpi3b-b0-32
+          - rpi3b-b0-64
           - rpi3bplus-32
           - rpi3bplus-64
           - rpi4-32
@@ -41,7 +43,7 @@ jobs:
           REQUESTED: ${{ github.event.inputs.target || 'all' }}
         run: |
           if [ "$REQUESTED" = "all" ]; then
-            echo 'matrix=["rpi3-32","rpi3-64","rpi3bplus-32","rpi3bplus-64","rpi4-32","rpi4-64"]' >> "$GITHUB_OUTPUT"
+            echo 'matrix=["rpi3-32","rpi3-64","rpi3b-b0-32","rpi3b-b0-64","rpi3bplus-32","rpi3bplus-64","rpi4-32","rpi4-64"]' >> "$GITHUB_OUTPUT"
           else
             printf 'matrix=["%s"]\n' "$REQUESTED" >> "$GITHUB_OUTPUT"
           fi
