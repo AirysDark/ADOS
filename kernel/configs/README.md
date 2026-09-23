@@ -1,14 +1,14 @@
 # ADOS Kernel Configurations
 
-This directory owns ADOS kernel configuration fragments/configs.
+ADOS owns its kernel configuration fragments.
 
-Planned configuration families:
+Configuration families:
 
 ```text
-ados-rpi3-arm32.config
-ados-rpi3-arm64.config
-ados-rpi4-arm32.config
-ados-rpi4-arm64.config
+ados-common.config
+ados-rpi3b-b0.config
 ```
 
-Pi 3B and 3B+ share architecture families where practical; board-specific device-tree and driver differences remain supported.
+The dedicated `rpi3b-b0` target is for the unusual Raspberry Pi 3 Model B PCB fitted with a BCM2837B0-class SoC. It intentionally starts from the Pi 3 Model B platform configuration rather than pretending the complete board is a Pi 3B+.
+
+ADOS keeps ARM32 and ARM64 as separate userlands/build targets. Board revision, device tree and detected SoC information are retained separately so mixed/component-substitution boards can be diagnosed rather than being classified from one identifier.
