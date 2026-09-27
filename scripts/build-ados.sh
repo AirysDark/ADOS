@@ -37,7 +37,7 @@ SCRIPTS_CONFIG="$BR_DIR/support/kconfig/scripts/config"
 FRAGMENTS="$ROOT/kernel/configs/ados-common.config"
 [ -z "$EXTRA_FRAGMENT" ] || FRAGMENTS="$FRAGMENTS $EXTRA_FRAGMENT"
 
-"$SCRIPTS_CONFIG" --file "$CFG" --set-str BR2_TARGET_GENERIC_HOSTNAME "ados" --set-str BR2_TARGET_GENERIC_ISSUE "ADOS" --enable BR2_PACKAGE_OPENSSH --enable BR2_PACKAGE_NANO --enable BR2_PACKAGE_HTOP --enable BR2_PACKAGE_IPROUTE2 --enable BR2_PACKAGE_I2C_TOOLS --enable BR2_PACKAGE_LIBGPIOD --enable BR2_PACKAGE_LIBGPIOD_TOOLS --set-str BR2_ROOTFS_OVERLAY "$ROOT/board/raspberrypi/common/rootfs-overlay" --set-str BR2_ROOTFS_POST_BUILD_SCRIPT "$ROOT/board/raspberrypi/common/post-build.sh" --set-str BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES "$FRAGMENTS"
+"$SCRIPTS_CONFIG" --file "$CFG" --set-str BR2_TARGET_GENERIC_HOSTNAME "ados" --set-str BR2_TARGET_GENERIC_ISSUE "ADOS" --enable BR2_PACKAGE_OPENSSH --enable BR2_PACKAGE_NANO --enable BR2_PACKAGE_HTOP --enable BR2_PACKAGE_IPROUTE2 --enable BR2_PACKAGE_I2C_TOOLS --enable BR2_PACKAGE_LIBGPIOD --enable BR2_PACKAGE_LIBGPIOD_TOOLS --enable BR2_PACKAGE_FILE --enable BR2_PACKAGE_BINUTILS --set-str BR2_ROOTFS_OVERLAY "$ROOT/board/raspberrypi/common/rootfs-overlay" --set-str BR2_ROOTFS_POST_BUILD_SCRIPT "$ROOT/board/raspberrypi/common/post-build.sh" --set-str BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES "$FRAGMENTS"
 "$SCRIPTS_CONFIG" --file "$CFG" --disable BR2_LINUX_KERNEL_LATEST_VERSION --disable BR2_LINUX_KERNEL_CUSTOM_VERSION --disable BR2_LINUX_KERNEL_CUSTOM_TARBALL --enable BR2_LINUX_KERNEL_CUSTOM_GIT --set-str BR2_LINUX_KERNEL_CUSTOM_REPO_URL "https://github.com/raspberrypi/linux.git" --set-str BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION "$RPI_KERNEL_BRANCH"
 
 make -C "$BR_DIR" O="$OUT" olddefconfig
@@ -49,4 +49,11 @@ NAME="ADOS-${TARGET}.img"
 cp "$IMG" "$OUT_BASE/$NAME"
 xz -T0 -f "$OUT_BASE/$NAME"
 sha256sum "$OUT_BASE/$NAME.xz" > "$OUT_BASE/$NAME.xz.sha256"
+{
+  echo "ADOS target: $TARGET"
+  echo "Buildroot: $BUILDROOT_VERSION"
+  echo "Kernel source: raspberrypi/linux $RPI_KERNEL_BRANCH"
+  echo "Base defconfig: $BASE_DEFCONFIG"
+  echo "Kernel fragments: $FRAGMENTS"
+} > "$OUT_BASE/ADOS-${TARGET}.build-info.txt"
 echo "ADOS image ready: $OUT_BASE/$NAME.xz"
