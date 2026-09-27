@@ -1,0 +1,21 @@
+#!/bin/sh
+set -u
+
+file="${1:-}"
+if [ -z "$file" ]; then echo "Usage: ados-compat <binary>"; exit 2; fi
+if [ ! -e "$file" ]; then echo "ados-compat: not found: $file" >&2; exit 2; fi
+
+echo "ADOS binary compatibility"
+echo "========================="
+echo "Target       : $(cat /etc/ados-target 2>/dev/null || echo unknown)"
+echo "Kernel arch  : $(uname -m)"
+echo "Userland bits: $(getconf LONG_BIT 2>/dev/null || echo unknown)"
+echo "CPU features :"
+grep -m1 '^Features' /proc/cpuinfo 2>/dev/null || true
+
+echo "Binary:"
+file "$file" 2>/dev/null || ls -l "$file"
+
+if command -v readelf >/dev/null 2>&1; then
+  readelf -h "$file" 2>/dev/null | grep -E 'Class:|Data:|Machine:|Type:' || true
+fi
