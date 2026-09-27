@@ -1,0 +1,16 @@
+#!/bin/sh
+case "${1:-status}" in
+  status)
+    echo "ADOS Portable Display"
+    echo "Config: /etc/ados/portable.conf"
+    if [ -f /run/ados/portable.pid ] && kill -0 "$(cat /run/ados/portable.pid)" 2>/dev/null; then
+      echo "Daemon: running (PID $(cat /run/ados/portable.pid))"
+    else
+      echo "Daemon: not running"
+    fi
+    ;;
+  start) /etc/init.d/S45ados-portable start ;;
+  stop) /etc/init.d/S45ados-portable stop ;;
+  restart) /etc/init.d/S45ados-portable restart ;;
+  *) echo "Usage: ados-portable {status|start|stop|restart}" >&2; exit 2 ;;
+esac
