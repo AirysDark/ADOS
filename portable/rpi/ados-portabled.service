@@ -1,0 +1,14 @@
+[Unit]
+Description=ADOS Portable Display Service
+After=bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ados-portabled --config /etc/ados/portable.conf
+Restart=always
+RestartSec=1
+StateDirectory=ados/portable
+
+[Install]
+WantedBy=multi-user.target
