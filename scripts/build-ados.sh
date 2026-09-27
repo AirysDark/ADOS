@@ -42,6 +42,7 @@ FRAGMENTS="$ROOT/kernel/configs/ados-common.config"
 
 make -C "$BR_DIR" O="$OUT" olddefconfig
 export ADOS_TARGET="$TARGET"
+export ADOS_ROOT="$ROOT"
 make -C "$BR_DIR" O="$OUT" -j"$(nproc)"
 IMG="$OUT/images/sdcard.img"
 [ -f "$IMG" ] || { echo "ERROR: Build completed without sdcard.img" >&2; exit 1; }
@@ -55,5 +56,7 @@ sha256sum "$OUT_BASE/$NAME.xz" > "$OUT_BASE/$NAME.xz.sha256"
   echo "Kernel source: raspberrypi/linux $RPI_KERNEL_BRANCH"
   echo "Base defconfig: $BASE_DEFCONFIG"
   echo "Kernel fragments: $FRAGMENTS"
+  echo "Portable source: portable/ (embedded automatically)"
+  echo "Portable commit: $(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
 } > "$OUT_BASE/ADOS-${TARGET}.build-info.txt"
 echo "ADOS image ready: $OUT_BASE/$NAME.xz"
