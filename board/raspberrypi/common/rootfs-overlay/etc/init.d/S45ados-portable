@@ -1,0 +1,24 @@
+#!/bin/sh
+DAEMON=/usr/bin/ados-portabled
+PIDFILE=/run/ados/portable.pid
+
+start() {
+  mkdir -p /run/ados /var/lib/ados/portable
+  [ -x "$DAEMON" ] || { echo "ADOS Portable daemon not installed"; return 0; }
+  [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null && return 0
+  echo "Starting ADOS Portable Display..."
+  "$DAEMON" --config /etc/ados/portable.conf &
+  echo $! > "$PIDFILE"
+}
+stop() {
+  if [ -f "$PIDFILE" ]; then
+    kill "$(cat "$PIDFILE")" 2>/dev/null || true
+    rm -f "$PIDFILE"
+  fi
+}
+case "$1" in
+ start) start ;;
+ stop) stop ;;
+ restart) stop; sleep 1; start ;;
+ *) echo "Usage: $0 {start|stop|restart}" >&2; exit 2 ;;
+esac
