@@ -15,8 +15,11 @@ if [ -r /proc/cpuinfo ]; then
     soc="$(awk -F ': ' '/^Hardware/ {print $2; exit}' /proc/cpuinfo)"
 fi
 
+target="$(cat /etc/ados-target 2>/dev/null || echo unknown)"
+
 echo "ADOS system information"
 echo "-----------------------"
+echo "Target       : $target"
 echo "Model        : ${model:-unknown}"
 echo "Revision     : ${revision:-unknown}"
 echo "Hardware/SoC : ${soc:-unknown}"
