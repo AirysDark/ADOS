@@ -1,0 +1,19 @@
+#!/bin/sh
+echo "ADOS compatibility diagnostics"
+echo "=============================="
+echo "Target       : $(cat /etc/ados-target 2>/dev/null || echo unknown)"
+echo "Machine      : $(uname -m)"
+echo "Kernel       : $(uname -r)"
+echo "Compiler ABI : $(getconf LONG_BIT 2>/dev/null || echo unknown)-bit"
+echo
+echo "[device tree]"
+tr -d '\000' < /proc/device-tree/model 2>/dev/null || true
+echo
+echo "[cpuinfo]"
+grep -E '^(model name|Hardware|Revision|Serial|Features)' /proc/cpuinfo 2>/dev/null || true
+echo
+echo "[memory]"
+head -n 5 /proc/meminfo 2>/dev/null || true
+echo
+echo "[kernel warnings/errors]"
+dmesg 2>/dev/null | grep -Ei 'error|fail|warn|under-voltage|voltage|thermal|mmc|ext4|segfault' | tail -n 80 || true
