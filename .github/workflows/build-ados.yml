@@ -80,6 +80,13 @@ jobs:
           find board/raspberrypi/common/rootfs-overlay/usr/bin -type f -exec chmod +x {} +
           ./scripts/build-ados.sh "${{ matrix.target }}"
 
+      - name: Verify image artifacts
+        run: |
+          test -s "output/ADOS-${{ matrix.target }}.img.xz"
+          test -s "output/ADOS-${{ matrix.target }}.img.xz.sha256"
+          test -s "output/ADOS-${{ matrix.target }}.build-info.txt"
+          (cd output && sha256sum -c "ADOS-${{ matrix.target }}.img.xz.sha256")
+
       - name: Upload image
         uses: actions/upload-artifact@v4
         with:
@@ -87,5 +94,6 @@ jobs:
           path: |
             output/ADOS-${{ matrix.target }}.img.xz
             output/ADOS-${{ matrix.target }}.img.xz.sha256
+            output/ADOS-${{ matrix.target }}.build-info.txt
           if-no-files-found: error
           retention-days: 14
