@@ -1,14 +1,27 @@
 # ADOS OS integration
 
-The portable display subsystem is part of the ADOS root filesystem.
+The root `portable/` directory is the **source of truth** for the ADOS Portable subsystem.
 
-Installed paths:
-- `/etc/ados/portable.conf`
-- `/usr/bin/ados-portable`
-- `/usr/bin/ados-portabled` (daemon implementation)
-- `/etc/init.d/S45ados-portable`
-- `/var/lib/ados/portable/`
+Every ADOS image build automatically copies the complete current `portable/` tree into:
 
-ADOS currently uses Buildroot/SysV-style init, so `ados-portabled.service` remains reference material for a future systemd configuration. The active ADOS image starts the portable subsystem through `S45ados-portable`.
+```text
+/usr/share/ados/portable/
+```
 
-The daemon must implement APDP, continuous BLE discovery/control, authenticated provisioning, Wi-Fi session creation/recovery, and terminal/touch transport without requiring a desktop.
+This means changes to protocol documentation, Arduino firmware, Pi-side code, configuration, and future portable assets are captured by the next OS build without manually duplicating them elsewhere.
+
+## Runtime installation
+
+During the Buildroot post-build stage ADOS also consumes runtime assets from `portable/rpi/`:
+
+- `portable.conf` if present, otherwise `portable.conf.example` -> `/etc/ados/portable.conf`
+- `ados-portabled`, when present -> `/usr/bin/ados-portabled`
+- `rootfs-overlay/`, when present -> merged into the ADOS root filesystem
+
+The standard ADOS image provides `/usr/bin/ados-portable` and `/etc/init.d/S45ados-portable`.
+
+The Git commit used for the portable snapshot is recorded in `/usr/share/ados/portable-build-commit`.
+
+GitHub Actions watches `portable/**`, so any committed portable change triggers fresh ADOS image builds.
+
+The existing `ados-portabled.service` remains reference material for a future systemd configuration. Current ADOS uses Buildroot/SysV init.
