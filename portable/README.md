@@ -1,5 +1,9 @@
 # ADOS Portable Display
 
+**SOURCE OF TRUTH:** this root `portable/` directory is the canonical source for every ADOS portable-display asset. Do not maintain a second copy under `board/`, `system/`, or another build directory.
+
+Every ADOS OS build must consume the current contents of this directory automatically. Changes under `portable/**` trigger the image workflow and the Buildroot post-build stage snapshots the complete tree to `/usr/share/ados/portable/`. Pi runtime files in `portable/rpi/` are installed from this same source when present.
+
 ADOS Portable turns the NV3047 / Elecrow CrowPanel 4.3-inch ESP32-S3 device into a wireless portable touchscreen for ADOS.
 
 ## Hardware baseline
