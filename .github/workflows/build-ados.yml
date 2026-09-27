@@ -26,6 +26,7 @@ on:
       - "configs/**"
       - "cli/**"
       - "scripts/**"
+      - "portable/**"
       - ".github/workflows/build-ados.yml"
 
 permissions:
