@@ -17,6 +17,12 @@ The eight ARM32/ARM64 board builds remain the engineering and CI validation matr
 
 The Frankenstein profile is deliberately separate. A BCM2837B0 must not by itself cause the installer to classify a Pi 3B PCB as a Pi 3B+.
 
+## Installer implementation
+
+`ados-detect-hardware` is the canonical non-destructive detector. It emits key/value diagnostics and exits non-zero for unsupported or ambiguous hardware. `ADOS_SOC_REVISION` is available as an explicit diagnostic/test override until the installer has a hardware-verified BCM2837B0 revision source on the Frankenstein board.
+
+`release-manifest.example.json` defines manifest schema `ados.release-manifest.v1`. Null artifact entries are intentionally non-installable placeholders until CI publishes verified artifacts.
+
 ## Detection contract
 
 Hardware selection must use multiple signals where available:
