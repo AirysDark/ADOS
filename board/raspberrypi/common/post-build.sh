@@ -68,3 +68,11 @@ for installed in \
         exit 1
     fi
 done
+
+# Verify Portable interpreter/runtime prerequisites exist in the generated rootfs.
+for binary in python3 bluetoothctl hostapd iw ip; do
+    if [ ! -e "$TARGET_DIR/usr/bin/$binary" ] && [ ! -e "$TARGET_DIR/usr/sbin/$binary" ] && [ ! -e "$TARGET_DIR/sbin/$binary" ] && [ ! -e "$TARGET_DIR/bin/$binary" ]; then
+        echo "ERROR: ADOS Portable dependency missing from rootfs: $binary" >&2
+        exit 1
+    fi
+done
