@@ -9,7 +9,7 @@ ADOS deliberately has no desktop environment, X11 or Wayland user session. HDMI 
 | Board | ARM32 | ARM64 |
 |---|---|---|
 | Raspberry Pi 3 Model B | Yes | Yes |
-| Raspberry Pi 3 Model B + BCM2837B0 SoC | Yes | Yes |
+| Raspberry Pi Frankenstein (Pi 3B PCB + BCM2837B0-generation SoC) | Yes | Yes |
 | Raspberry Pi 3 Model B+ | Yes | Yes |
 | Raspberry Pi 3 silicon/component variants | Yes | Yes |
 | Raspberry Pi 4 Model B | Yes | Yes |
@@ -32,7 +32,8 @@ The project does not intend to rewrite Linux from scratch. ADOS owns the configu
 
 ## Core goals
 
-- Reproducible bootable SD-card images
+- One universal user-facing USB installer with automatic hardware detection
+- Reproducible per-target build artifacts
 - Custom ADOS kernel build
 - Terminal-only userspace
 - Raspberry Pi 3/3B+/4 support
@@ -46,7 +47,13 @@ The project does not intend to rewrite Linux from scratch. ADOS owns the configu
 - ADOS command-line administration tools
 - Automated GitHub Actions builds
 
-## Planned targets
+## Universal USB installer
+
+The user-facing installation path is a single `ADOS-Installer.img.xz` image written to USB. On boot it detects Raspberry Pi 3B, Raspberry Pi 3B+, Raspberry Pi Frankenstein, or Raspberry Pi 4 hardware, then retrieves and verifies the matching prebuilt ADOS release components. See `installer/README.md` for the detection and installation contract.
+
+The per-board ARM32/ARM64 targets below remain the engineering/CI matrix and are not intended to require users to choose among eight installer images.
+
+## Build targets
 
 ```text
 ados_rpi3_32
@@ -111,8 +118,8 @@ ADOS startup, services, logging, configuration and command-line administration.
 ### Phase 4 — Update/package infrastructure
 Kernel/system update tooling and ADOS package infrastructure.
 
-### Phase 5 — Releases and testing
-Automated ARM32/ARM64 images, checksums, boot testing and release artifacts.
+### Phase 5 — Universal USB installer and releases
+Build `ADOS-Installer.img.xz`, automatic 3B/3B+/Frankenstein/4 detection, release manifests, verified component downloads, automated ARM32/ARM64 builds, checksums, boot testing and release artifacts.
 
 ## Status
 
