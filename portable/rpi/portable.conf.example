@@ -7,7 +7,8 @@ status_uuid=30470000-ad05-4000-8000-000000000003
 
 [wifi]
 enabled=true
-interface=wlan0
+parent_interface=wlan0
+ap_interface=ados0
 ssid_prefix=_ADOS-DISP-
 hidden=true
 channel=6
