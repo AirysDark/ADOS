@@ -63,6 +63,10 @@ BR2_PACKAGE_PYTHON_DBUS_NEXT=y
 BR2_ROOTFS_OVERLAY="$ROOT/board/raspberrypi/common/rootfs-overlay"
 BR2_ROOTFS_POST_BUILD_SCRIPT="$ROOT/board/raspberrypi/common/post-build.sh"
 BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$FRAGMENTS"
+# Raspberry Pi defconfigs force hashes for upstream source archives.
+# Our custom Git kernel is pinned to an immutable commit but has no
+# Buildroot-generated git4 archive hash yet; keep normal hash checks.
+# BR2_DOWNLOAD_FORCE_CHECK_HASHES is not set
 # BR2_LINUX_KERNEL_LATEST_VERSION is not set
 # BR2_LINUX_KERNEL_CUSTOM_VERSION is not set
 # BR2_LINUX_KERNEL_CUSTOM_TARBALL is not set
