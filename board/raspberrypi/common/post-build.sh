@@ -70,9 +70,17 @@ for installed in \
 done
 
 # Verify Portable interpreter/runtime prerequisites exist in the generated rootfs.
-for binary in python3 bluetoothctl hostapd iw ip; do
+for binary in python3 bluetoothctl bluetoothd dbus-daemon hostapd iw ip; do
     if [ ! -e "$TARGET_DIR/usr/bin/$binary" ] && [ ! -e "$TARGET_DIR/usr/sbin/$binary" ] && [ ! -e "$TARGET_DIR/sbin/$binary" ] && [ ! -e "$TARGET_DIR/bin/$binary" ]; then
         echo "ERROR: ADOS Portable dependency missing from rootfs: $binary" >&2
+        exit 1
+    fi
+done
+
+# Enforce ADOS service ordering required by Portable.
+for service in S30ados-network S35ados-bluetooth S45ados-portable; do
+    if [ ! -x "$TARGET_DIR/etc/init.d/$service" ]; then
+        echo "ERROR: required ADOS boot service missing/not executable: $service" >&2
         exit 1
     fi
 done
