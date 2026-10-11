@@ -1,0 +1,27 @@
+#!/bin/sh
+PIDFILE=/run/ados/bluetoothd.pid
+
+start() {
+  mkdir -p /run/ados
+  rfkill unblock bluetooth 2>/dev/null || true
+  if ! [ -S /run/dbus/system_bus_socket ]; then
+    if command -v dbus-daemon >/dev/null 2>&1; then
+      mkdir -p /run/dbus
+      dbus-daemon --system --fork 2>/dev/null || true
+    fi
+  fi
+  if command -v bluetoothd >/dev/null 2>&1 && ! pidof bluetoothd >/dev/null 2>&1; then
+    bluetoothd &
+    echo $! > "$PIDFILE"
+  fi
+}
+stop() {
+  [ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null || true
+  rm -f "$PIDFILE"
+}
+case "$1" in
+ start) start ;;
+ stop) stop ;;
+ restart) stop; sleep 1; start ;;
+ *) echo "Usage: $0 {start|stop|restart}" >&2; exit 2 ;;
+esac
