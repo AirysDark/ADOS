@@ -2,6 +2,7 @@
 set -euo pipefail
 
 BUILDROOT_VERSION="2025.02.18"
+RPI_KERNEL_REPO="https://github.com/AirysDark/linux.git"
 RPI_KERNEL_BRANCH="rpi-6.12.y"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CACHE="${ADOS_CACHE:-$ROOT/.cache}"
@@ -65,7 +66,7 @@ BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$FRAGMENTS"
 # BR2_LINUX_KERNEL_CUSTOM_VERSION is not set
 # BR2_LINUX_KERNEL_CUSTOM_TARBALL is not set
 BR2_LINUX_KERNEL_CUSTOM_GIT=y
-BR2_LINUX_KERNEL_CUSTOM_REPO_URL="https://github.com/raspberrypi/linux.git"
+BR2_LINUX_KERNEL_CUSTOM_REPO_URL="$RPI_KERNEL_REPO"
 BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION="$RPI_KERNEL_BRANCH"
 EOF
 
@@ -82,7 +83,8 @@ sha256sum "$OUT_BASE/$NAME.xz" > "$OUT_BASE/$NAME.xz.sha256"
 {
   echo "ADOS target: $TARGET"
   echo "Buildroot: $BUILDROOT_VERSION"
-  echo "Kernel source: raspberrypi/linux $RPI_KERNEL_BRANCH"
+  echo "Kernel source: AirysDark/linux $RPI_KERNEL_BRANCH"
+  echo "Kernel repository: $RPI_KERNEL_REPO"
   echo "Base defconfig: $BASE_DEFCONFIG"
   echo "Kernel fragments: $FRAGMENTS"
   echo "Portable source: portable/ (embedded automatically)"
