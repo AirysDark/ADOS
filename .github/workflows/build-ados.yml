@@ -79,6 +79,7 @@ jobs:
           chmod +x scripts/build-ados.sh
           find board/raspberrypi/common/rootfs-overlay/etc/init.d -type f -exec chmod +x {} +
           find board/raspberrypi/common/rootfs-overlay/usr/bin -type f -exec chmod +x {} +
+          chmod +x board/raspberrypi/common/post-build.sh
           ./scripts/build-ados.sh "${{ matrix.target }}"
 
       - name: Verify image artifacts
