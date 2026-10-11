@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""BlueZ GATT/advertising helper for ADOS Portable.
+
+Requires python3-dbus-next and BlueZ with GATT peripheral support.
+Advertising remains registered for the lifetime of this process, including
+while a Wi-Fi display session is active.
+"""
+import argparse, asyncio, json
+from pathlib import Path
+try:
+    from dbus_next.aio import MessageBus
+    from dbus_next.service import ServiceInterface, method, dbus_property
+    from dbus_next import Variant, BusType
+except ImportError:
+    raise SystemExit("ados-portable-gatt requires python3-dbus-next")
+
+SERVICE="30470000-ad05-4000-8000-000000000001"
+PROVISION="30470000-ad05-4000-8000-000000000002"
+STATUS="30470000-ad05-4000-8000-000000000003"
+
+class Advertisement(ServiceInterface):
+    def __init__(self):
+        super().__init__("org.bluez.LEAdvertisement1")
+    @dbus_property()
+    def Type(self)->'s': return "peripheral"
+    @dbus_property()
+    def ServiceUUIDs(self)->'as': return [SERVICE]
+    @dbus_property()
+    def LocalName(self)->'s': return "ADOS-Portable"
+    @dbus_property()
+    def Includes(self)->'as': return ["tx-power"]
+    @method()
+    def Release(self): pass
+
+class Characteristic(ServiceInterface):
+    def __init__(self,path,uuid,flags,reader):
+        super().__init__("org.bluez.GattCharacteristic1"); self.path=path; self.uuid=uuid; self.flags=flags; self.reader=reader
+    @dbus_property()
+    def UUID(self)->'s': return self.uuid
+    @dbus_property()
+    def Service(self)->'o': return "/com/ados/portable/service0"
+    @dbus_property()
+    def Flags(self)->'as': return self.flags
+    @method()
+    def ReadValue(self,options:'a{sv}')->'ay':
+        return list(self.reader().encode())
+
+class Service(ServiceInterface):
+    def __init__(self): super().__init__("org.bluez.GattService1")
+    @dbus_property()
+    def UUID(self)->'s': return SERVICE
+    @dbus_property()
+    def Primary(self)->'b': return True
+
+class App(ServiceInterface):
+    def __init__(self, provision):
+        super().__init__("org.freedesktop.DBus.ObjectManager"); self.provision=provision
+    @method()
+    def GetManagedObjects(self)->'a{oa{sa{sv}}}':
+        s="/com/ados/portable/service0"; p=s+"/char0"; q=s+"/char1"
+        return {
+          s:{"org.bluez.GattService1":{"UUID":Variant("s",SERVICE),"Primary":Variant("b",True)}},
+          p:{"org.bluez.GattCharacteristic1":{"UUID":Variant("s",PROVISION),"Service":Variant("o",s),"Flags":Variant("as",["read","encrypt-read"])}},
+          q:{"org.bluez.GattCharacteristic1":{"UUID":Variant("s",STATUS),"Service":Variant("o",s),"Flags":Variant("as",["read"])}}
+        }
+
+async def main():
+    ap=argparse.ArgumentParser(); ap.add_argument("--provision",required=True); a=ap.parse_args()
+    bus=await MessageBus(bus_type=BusType.SYSTEM).connect()
+    intro=await bus.introspect("org.bluez","/org/bluez/hci0")
+    obj=bus.get_proxy_object("org.bluez","/org/bluez/hci0",intro)
+    gatt=obj.get_interface("org.bluez.GattManager1"); advm=obj.get_interface("org.bluez.LEAdvertisingManager1")
+    app=App(a.provision)
+    service=Service()
+    provision=Characteristic("/com/ados/portable/service0/char0",PROVISION,["read","encrypt-read"],lambda:Path(a.provision).read_text())
+    status=Characteristic("/com/ados/portable/service0/char1",STATUS,["read"],lambda:'{"v":1,"state":"ready"}')
+    advert=Advertisement()
+    bus.export("/com/ados/portable",app); bus.export("/com/ados/portable/service0",service)
+    bus.export("/com/ados/portable/service0/char0",provision); bus.export("/com/ados/portable/service0/char1",status)
+    bus.export("/com/ados/portable/advertisement0",advert)
+    await gatt.call_register_application("/com/ados/portable",{})
+    await advm.call_register_advertisement("/com/ados/portable/advertisement0",{})
+    await asyncio.Event().wait()
+asyncio.run(main())
