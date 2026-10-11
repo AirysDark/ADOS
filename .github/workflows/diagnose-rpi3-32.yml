@@ -1,0 +1,106 @@
+name: Diagnose ADOS Pi 3B ARM32
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-rpi3-32:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout ADOS
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git curl wget rsync file bc bison flex libssl-dev libncurses-dev cpio unzip python3 patch xz-utils
+
+      - name: Cache Buildroot downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: ados-${{ runner.os }}-rpi3-32-${{ hashFiles('scripts/build-ados.sh', 'kernel/**', 'board/**', 'portable/**') }}
+          restore-keys: |
+            ados-${{ runner.os }}-rpi3-32-
+
+      - name: Build rpi3-32 with bounded log
+        id: build
+        shell: bash
+        run: |
+          set +e
+          chmod +x scripts/build-ados.sh
+          find board/raspberrypi/common/rootfs-overlay/etc/init.d -type f -exec chmod +x {} +
+          find board/raspberrypi/common/rootfs-overlay/usr/bin -type f -exec chmod +x {} +
+          chmod +x board/raspberrypi/common/post-build.sh
+
+          mkdir -p diagnostics
+          timeout --signal=TERM --kill-after=2m 105m \
+            ./scripts/build-ados.sh rpi3-32 >diagnostics/build.log 2>&1
+          rc=$?
+
+          if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ] || [ "$rc" -eq 143 ]; then
+            result=timeout
+          elif [ "$rc" -eq 0 ]; then
+            result=success
+          else
+            result=failure
+          fi
+
+          {
+            echo "ADOS rpi3-32 diagnostic report"
+            echo "result=$result"
+            echo "exit_code=$rc"
+            echo "commit=${GITHUB_SHA}"
+            echo
+            echo "===== LAST 250 BUILD LOG LINES ====="
+            tail -n 250 diagnostics/build.log
+          } > diagnostics/rpi3-32-report.txt
+
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
+
+      - name: Show diagnostic tail
+        if: always()
+        shell: bash
+        run: |
+          if [ -f diagnostics/rpi3-32-report.txt ]; then
+            cat diagnostics/rpi3-32-report.txt
+            {
+              echo '### ADOS Pi 3B ARM32 diagnostic'
+              echo
+              echo 'Result: **${{ steps.build.outputs.result || 'cancelled before report' }}**'
+              echo
+              echo 'Only the last 250 build-log lines are retained in the report artifact.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Diagnostic report was not created; job was cancelled before the build step completed." | tee diagnostics-cancelled.txt
+          fi
+
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ADOS-rpi3-32-diagnostic
+          path: |
+            diagnostics/rpi3-32-report.txt
+            diagnostics-cancelled.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Verify image on success
+        if: steps.build.outputs.result == 'success'
+        run: |
+          test -s output/ADOS-rpi3-32.img.xz
+          test -s output/ADOS-rpi3-32.img.xz.sha256
+          test -s output/ADOS-rpi3-32.build-info.txt
+          (cd output && sha256sum -c ADOS-rpi3-32.img.xz.sha256)
+
+      - name: Fail diagnostic job when build did not succeed
+        if: steps.build.outputs.result != 'success'
+        run: |
+          echo "rpi3-32 diagnostic result: ${{ steps.build.outputs.result }}"
+          exit 1
