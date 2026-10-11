@@ -1,0 +1,17 @@
+#!/bin/sh
+CONF=/etc/ados/network.conf
+[ -r "$CONF" ] && . "$CONF"
+PORTABLE_INTERFACE="${PORTABLE_INTERFACE:-ados0}"
+case "${1:-status}" in
+ status)
+   echo "ADOS networking"
+   ip -brief link 2>/dev/null || ip link
+   echo
+   echo "Addresses:"
+   ip -brief address 2>/dev/null || ip address
+   echo
+   echo "Portable interface '$PORTABLE_INTERFACE' is reserved for ados-portabled."
+   ;;
+ restart) /etc/init.d/S30ados-network restart ;;
+ *) echo "Usage: ados-network {status|restart}" >&2; exit 2 ;;
+esac
