@@ -44,3 +44,27 @@ fi
 if command -v git >/dev/null 2>&1; then
     git -C "$ROOT" rev-parse HEAD 2>/dev/null > "$TARGET_DIR/usr/share/ados/portable-build-commit" || true
 fi
+
+# Portable is an ADOS core subsystem: fail the image build if its required
+# source-of-truth runtime is incomplete.
+for required in \
+    "$PORTABLE/README.md" \
+    "$PORTABLE/protocol/APDP.md" \
+    "$PORTABLE/rpi/ados-portabled" \
+    "$PORTABLE/rpi/ados-portable-gatt" \
+    "$PORTABLE/rpi/portable.conf.example"; do
+    if [ ! -s "$required" ]; then
+        echo "ERROR: required ADOS Portable source missing: $required" >&2
+        exit 1
+    fi
+done
+
+for installed in \
+    "$TARGET_DIR/usr/bin/ados-portabled" \
+    "$TARGET_DIR/usr/bin/ados-portable-gatt" \
+    "$TARGET_DIR/etc/ados/portable.conf"; do
+    if [ ! -s "$installed" ]; then
+        echo "ERROR: ADOS Portable runtime not installed: $installed" >&2
+        exit 1
+    fi
+done
