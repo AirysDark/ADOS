@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""ADOS Portable Raspberry Pi daemon.
+
+Source of truth: ADOS/portable.
+Continuously exposes the BLE provisioning service and creates an ephemeral
+private Wi-Fi session for an authenticated NV3047 ESP32-S3 client.
+
+BlueZ GATT registration is delegated to bluetoothctl/BlueZ tooling available
+on ADOS; network creation is performed through hostapd + ip. No OS build files
+are modified here.
+"""
+import argparse, configparser, json, os, secrets, signal, socket, subprocess, sys, tempfile, time
+from pathlib import Path
+
+SERVICE_UUID="30470000-ad05-4000-8000-000000000001"
+PROVISION_UUID="30470000-ad05-4000-8000-000000000002"
+STATUS_UUID="30470000-ad05-4000-8000-000000000003"
+DEFAULT_CONF="/etc/ados/portable.conf"
+STATE=Path("/var/lib/ados/portable")
+RUN=Path("/run/ados-portable")
+
+def sh(*args, check=True):
+    return subprocess.run(args, check=check, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+class Session:
+    def __init__(self, cfg):
+        self.cfg=cfg
+        self.sid=secrets.token_hex(8)
+        self.psk=secrets.token_urlsafe(24)
+        self.ssid=f"{cfg.get('wifi','ssid_prefix',fallback='_ADOS-DISP-')}{self.sid[:6].upper()}"
+        self.token=secrets.token_hex(32)
+        self.iface=cfg.get('wifi','interface',fallback='wlan0')
+        self.port=cfg.getint('apdp','tcp_port',fallback=3047)
+        self.host=cfg.get('wifi','host_address',fallback='10.77.0.1')
+        self.channel=cfg.getint('wifi','channel',fallback=6)
+        self.hostapd=None
+    def payload(self):
+        return json.dumps({"v":1,"ssid":self.ssid,"psk":self.psk,"channel":self.channel,
+          "host":self.host,"port":self.port,"session":self.sid,"token":self.token},
+          separators=(',',':'))
+    def start_ap(self):
+        RUN.mkdir(parents=True,exist_ok=True)
+        hidden=1 if self.cfg.getboolean('wifi','hidden',fallback=True) else 0
+        conf=RUN/"hostapd.conf"
+        conf.write_text(f"""interface={self.iface}
+driver=nl80211
+ssid={self.ssid}
+hw_mode=g
+channel={self.channel}
+ignore_broadcast_ssid={hidden}
+wpa=2
+wpa_passphrase={self.psk}
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+""")
+        sh("ip","link","set",self.iface,"up")
+        sh("ip","addr","replace",f"{self.host}/30","dev",self.iface)
+        self.hostapd=subprocess.Popen(["hostapd",str(conf)])
+    def stop(self):
+        if self.hostapd and self.hostapd.poll() is None:
+            self.hostapd.terminate()
+            try:self.hostapd.wait(3)
+            except subprocess.TimeoutExpired:self.hostapd.kill()
+
+def write_provision(session):
+    """Atomic handoff consumed by the BLE GATT helper."""
+    RUN.mkdir(parents=True,exist_ok=True)
+    p=RUN/"provision.json"; tmp=RUN/"provision.tmp"
+    tmp.write_text(session.payload()); os.replace(tmp,p)
+    os.chmod(p,0o600)
+
+def main():
+    ap=argparse.ArgumentParser(); ap.add_argument("--config",default=DEFAULT_CONF); args=ap.parse_args()
+    cfg=configparser.ConfigParser(); cfg.read(args.config)
+    STATE.mkdir(parents=True,exist_ok=True); RUN.mkdir(parents=True,exist_ok=True)
+    session=Session(cfg)
+    stopping=False
+    def stop(*_):
+        nonlocal stopping; stopping=True
+    signal.signal(signal.SIGTERM,stop); signal.signal(signal.SIGINT,stop)
+    try:
+        session.start_ap()
+        write_provision(session)
+        print(f"ADOS Portable ready: BLE service {SERVICE_UUID}; Wi-Fi session {session.ssid}",flush=True)
+        # ados-portable-gatt owns continuous BlueZ advertising. Restart it if it exits.
+        while not stopping:
+            proc=subprocess.Popen([sys.executable,str(Path(__file__).with_name("ados-portable-gatt")),
+                                   "--provision",str(RUN/"provision.json")])
+            while proc.poll() is None and not stopping: time.sleep(1)
+            if stopping:
+                proc.terminate(); break
+            print("GATT helper exited; restarting in 1 second",file=sys.stderr,flush=True); time.sleep(1)
+    finally:
+        session.stop()
+if __name__=="__main__": main()
