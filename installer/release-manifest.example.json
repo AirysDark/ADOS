@@ -1,0 +1,15 @@
+{
+  "schema": "ados.release-manifest.v1",
+  "release": "development",
+  "kernel": {
+    "repository": "https://github.com/AirysDark/linux.git",
+    "branch": "rpi-6.12.y",
+    "commit": "43c132e8863c3bff3647033b6a7d2bf87b15501c"
+  },
+  "profiles": {
+    "rpi3b": {"arm32": null, "arm64": null},
+    "rpi3-frankenstein": {"arm32": null, "arm64": null},
+    "rpi3bplus": {"arm32": null, "arm64": null},
+    "rpi4": {"arm32": null, "arm64": null}
+  }
+}
