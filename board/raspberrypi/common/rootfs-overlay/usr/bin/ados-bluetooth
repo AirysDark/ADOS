@@ -1,0 +1,10 @@
+#!/bin/sh
+case "${1:-status}" in
+ status)
+   echo "ADOS Bluetooth"
+   rfkill list bluetooth 2>/dev/null || true
+   bluetoothctl show 2>/dev/null || echo "BlueZ controller unavailable"
+   ;;
+ restart) /etc/init.d/S35ados-bluetooth restart ;;
+ *) echo "Usage: ados-bluetooth {status|restart}" >&2; exit 2 ;;
+esac
