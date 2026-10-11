@@ -30,9 +30,11 @@ elif [ -f "$PORTABLE/rpi/portable.conf.example" ]; then
     cp "$PORTABLE/rpi/portable.conf.example" "$TARGET_DIR/etc/ados/portable.conf"
 fi
 
-if [ -f "$PORTABLE/rpi/ados-portabled" ]; then
-    install -m 0755 "$PORTABLE/rpi/ados-portabled" "$TARGET_DIR/usr/bin/ados-portabled"
-fi
+for runtime in ados-portabled ados-portable-gatt; do
+    if [ -f "$PORTABLE/rpi/$runtime" ]; then
+        install -m 0755 "$PORTABLE/rpi/$runtime" "$TARGET_DIR/usr/bin/$runtime"
+    fi
+done
 
 if [ -d "$PORTABLE/rpi/rootfs-overlay" ]; then
     cp -a "$PORTABLE/rpi/rootfs-overlay/." "$TARGET_DIR/"
