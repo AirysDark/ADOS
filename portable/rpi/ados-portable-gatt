@@ -18,6 +18,17 @@ SERVICE="30470000-ad05-4000-8000-000000000001"
 PROVISION="30470000-ad05-4000-8000-000000000002"
 STATUS="30470000-ad05-4000-8000-000000000003"
 
+class Agent(ServiceInterface):
+    def __init__(self): super().__init__("org.bluez.Agent1")
+    @method()
+    def Release(self): pass
+    @method()
+    def RequestAuthorization(self, device:'o'): return
+    @method()
+    def AuthorizeService(self, device:'o', uuid:'s'): return
+    @method()
+    def Cancel(self): pass
+
 class Advertisement(ServiceInterface):
     def __init__(self):
         super().__init__("org.bluez.LEAdvertisement1")
@@ -69,12 +80,24 @@ async def main():
     bus=await MessageBus(bus_type=BusType.SYSTEM).connect()
     intro=await bus.introspect("org.bluez","/org/bluez/hci0")
     obj=bus.get_proxy_object("org.bluez","/org/bluez/hci0",intro)
+    agent_intro=await bus.introspect("org.bluez","/org/bluez")
+    agent_obj=bus.get_proxy_object("org.bluez","/org/bluez",agent_intro)
+    agent_mgr=agent_obj.get_interface("org.bluez.AgentManager1")
     gatt=obj.get_interface("org.bluez.GattManager1"); advm=obj.get_interface("org.bluez.LEAdvertisingManager1")
     app=App(a.provision)
     service=Service()
     provision=Characteristic("/com/ados/portable/service0/char0",PROVISION,["read","encrypt-read"],lambda:Path(a.provision).read_text())
     status=Characteristic("/com/ados/portable/service0/char1",STATUS,["read"],lambda:'{"v":1,"state":"ready"}')
-    advert=Advertisement()
+    advert=Advertisement(); agent=Agent()
+    bus.export("/com/ados/portable/agent",agent)
+    try:
+        await agent_mgr.call_register_agent("/com/ados/portable/agent","NoInputNoOutput")
+    except Exception:
+        pass
+    try:
+        await agent_mgr.call_request_default_agent("/com/ados/portable/agent")
+    except Exception:
+        pass
     bus.export("/com/ados/portable",app); bus.export("/com/ados/portable/service0",service)
     bus.export("/com/ados/portable/service0/char0",provision); bus.export("/com/ados/portable/service0/char1",status)
     bus.export("/com/ados/portable/advertisement0",advert)
