@@ -2,11 +2,15 @@
 enabled=true
 continuous_advertising=true
 service_uuid=30470000-ad05-4000-8000-000000000001
+provision_uuid=30470000-ad05-4000-8000-000000000002
+status_uuid=30470000-ad05-4000-8000-000000000003
 
 [wifi]
 enabled=true
+interface=wlan0
 ssid_prefix=_ADOS-DISP-
 hidden=true
+channel=6
 subnet=10.77.0.0/30
 host_address=10.77.0.1
 client_address=10.77.0.2
