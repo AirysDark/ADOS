@@ -91,9 +91,9 @@ void setup() {
   Serial.begin(115200); panel.begin(&hw); panel.setBrightness(80);
   BLEDevice::init("NV3047-ADOS-Portable");
   // Arduino-ESP32 2.0.17 BLE security: require encrypted authenticated provisioning.
-  BLEDevice::setEncryptionLevel(ESP_BLE_SEC_ENCRYPT_MITM);
+  BLEDevice::setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
   BLESecurity *sec=new BLESecurity();
-  sec->setAuthenticationMode(ESP_LE_AUTH_REQ_SC_MITM_BOND);
+  sec->setAuthenticationMode(ESP_LE_AUTH_REQ_SC_BOND);
   sec->setCapability(ESP_IO_CAP_NONE);
   scanner=BLEDevice::getScan(); scanner->setAdvertisedDeviceCallbacks(new FoundADOS(),true);
   scanner->setActiveScan(true); scanner->setInterval(100); scanner->setWindow(80);
