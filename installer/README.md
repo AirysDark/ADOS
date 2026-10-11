@@ -23,6 +23,8 @@ The Frankenstein profile is deliberately separate. A BCM2837B0 must not by itsel
 
 `release-manifest.example.json` defines manifest schema `ados.release-manifest.v1`. Null artifact entries are intentionally non-installable placeholders until CI publishes verified artifacts.
 
+`targets.map` records the authoritative mapping from the eight engineering targets to the four physical installer profiles and ARM architecture. `generate-release-manifest.py` consumes all eight compressed image artifacts, computes their SHA-256 digests and sizes, and refuses to emit a complete release manifest if any required target is missing.
+
 ## Detection contract
 
 Hardware selection must use multiple signals where available:
