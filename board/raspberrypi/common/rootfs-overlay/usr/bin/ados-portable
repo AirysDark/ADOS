@@ -1,16 +1,33 @@
 #!/bin/sh
+PIDFILE=/run/ados/portable.pid
 case "${1:-status}" in
   status)
     echo "ADOS Portable Display"
-    echo "Config: /etc/ados/portable.conf"
-    if [ -f /run/ados/portable.pid ] && kill -0 "$(cat /run/ados/portable.pid)" 2>/dev/null; then
-      echo "Daemon: running (PID $(cat /run/ados/portable.pid))"
+    echo "Target : $(cat /etc/ados-target 2>/dev/null || echo unknown)"
+    echo "Config : /etc/ados/portable.conf"
+    if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+      echo "Daemon : running (PID $(cat "$PIDFILE"))"
     else
-      echo "Daemon: not running"
+      echo "Daemon : not running"
     fi
+    echo "Bluetooth:"
+    rfkill list bluetooth 2>/dev/null || echo "  unavailable"
+    echo "Wi-Fi interfaces:"
+    iw dev 2>/dev/null || echo "  unavailable"
     ;;
+  check)
+    rc=0
+    for x in python3 bluetoothctl hostapd iw ip; do
+      if command -v "$x" >/dev/null 2>&1; then echo "[OK] $x"; else echo "[MISSING] $x"; rc=1; fi
+    done
+    python3 -c 'import dbus_next' >/dev/null 2>&1 && echo "[OK] python dbus_next" || { echo "[MISSING] python dbus_next"; rc=1; }
+    [ -x /usr/bin/ados-portabled ] && echo "[OK] ados-portabled" || { echo "[MISSING] ados-portabled"; rc=1; }
+    [ -x /usr/bin/ados-portable-gatt ] && echo "[OK] ados-portable-gatt" || { echo "[MISSING] ados-portable-gatt"; rc=1; }
+    exit "$rc"
+    ;;
+  log) tail -n 100 /var/log/ados-portable.log 2>/dev/null || true ;;
   start) /etc/init.d/S45ados-portable start ;;
   stop) /etc/init.d/S45ados-portable stop ;;
   restart) /etc/init.d/S45ados-portable restart ;;
-  *) echo "Usage: ados-portable {status|start|stop|restart}" >&2; exit 2 ;;
+  *) echo "Usage: ados-portable {status|check|log|start|stop|restart}" >&2; exit 2 ;;
 esac
