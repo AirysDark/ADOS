@@ -18,7 +18,7 @@ ARM32 and ARM64 are first-class targets with separate userlands.
 
 ## ADOS kernel
 
-ADOS builds and maintains its own Raspberry Pi Linux kernel configuration and ADOS patch set.
+ADOS builds and maintains its own Raspberry Pi Linux kernel configuration and ADOS patch set. Kernel source is the ADOS-owned `AirysDark/linux` repository. The current build tracks the `rpi-6.12.y` line and is pinned to commit `43c132e8863c3bff3647033b6a7d2bf87b15501c` for reproducibility.
 
 The kernel strategy is:
 
@@ -36,7 +36,7 @@ The project does not intend to rewrite Linux from scratch. ADOS owns the configu
 - Reproducible per-target build artifacts
 - Custom ADOS kernel build
 - Terminal-only userspace
-- Raspberry Pi 3/3B+/4 support
+- Raspberry Pi 3B, 3B+, Frankenstein and Pi 4 support
 - Runtime hardware/revision identification
 - ARMv7 32-bit and AArch64 64-bit builds
 - ADOS root filesystem, startup and services
@@ -100,9 +100,21 @@ ADOS/
 │   └── services/
 ├── cli/
 ├── packages/
+├── installer/              # universal USB installer and release manifest tooling
+├── portable/               # canonical ADOS Portable subsystem source
 ├── scripts/
 └── .github/workflows/
 ```
+
+## ADOS Portable
+
+`portable/` is the canonical source of truth for the ADOS Portable subsystem. It targets the NV3047/CrowPanel ESP32-S3 as a portable ADOS touchscreen/terminal. Bluetooth is used for discovery, bonding, provisioning, recovery and control; a private Wi-Fi link is used for higher-bandwidth display/input traffic. The ADOS image consumes the Portable runtime from this directory rather than maintaining a duplicate implementation elsewhere in the OS tree.
+
+Current OS integration includes BlueZ, hostapd, `iw`, `iproute2`, Python 3, `dbus-next`, the Portable daemon/GATT helper, ADOS networking ownership, and boot-time service integration. APDP display/input transport and physical end-to-end hardware validation remain development work.
+
+## Build and release integrity
+
+ADOS uses Buildroot as build machinery while ADOS owns its root filesystem, startup/services, configuration, CLI, kernel configuration and patches. Kernel source is pinned to an immutable commit. Generated image artifacts are SHA-256 verified by CI. The universal installer release manifest is designed to carry per-artifact SHA-256 digests and exact kernel provenance.
 
 ## Roadmap
 
@@ -121,6 +133,14 @@ Kernel/system update tooling and ADOS package infrastructure.
 ### Phase 5 — Universal USB installer and releases
 Build `ADOS-Installer.img.xz`, automatic 3B/3B+/Frankenstein/4 detection, release manifests, verified component downloads, automated ARM32/ARM64 builds, checksums, boot testing and release artifacts.
 
-## Status
+## Current development status
 
-Early development. The immediate objective is a minimal bootable ADOS terminal image using an ADOS-built kernel.
+ADOS is in active development and is not yet declared hardware-verified or release-ready. The eight-target CI matrix is currently validating the pinned custom-kernel build path after removing Buildroot's forced upstream-archive hash requirement for the custom Git kernel. GitHub Actions run #52 is still in progress, so no successful bootable image is claimed yet.
+
+The current workstreams are:
+
+- complete and validate all eight ARM32/ARM64 engineering builds;
+- build the universal USB installer around the four physical hardware profiles;
+- generate release manifests automatically from verified CI artifacts;
+- complete ADOS Portable APDP transport and hardware validation;
+- perform physical boot, networking, Bluetooth, Portable and installer testing on supported Raspberry Pi hardware.
