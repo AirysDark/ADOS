@@ -9,7 +9,7 @@ BlueZ GATT registration is delegated to bluetoothctl/BlueZ tooling available
 on ADOS; network creation is performed through hostapd + ip. No OS build files
 are modified here.
 """
-import argparse, configparser, json, os, secrets, signal, socket, subprocess, sys, tempfile, time
+import argparse, configparser, json, os, re, secrets, signal, socket, subprocess, sys, tempfile, time
 from pathlib import Path
 
 SERVICE_UUID="30470000-ad05-4000-8000-000000000001"
@@ -35,6 +35,10 @@ class Session:
         self.port=cfg.getint('apdp','tcp_port',fallback=3047)
         self.host=cfg.get('wifi','host_address',fallback='10.77.0.1')
         self.channel=cfg.getint('wifi','channel',fallback=6)
+        # A single Pi radio normally requires concurrent STA+AP interfaces to share a channel.
+        info=sh('iw','dev',self.parent,'info',check=False)
+        m=re.search(r'channel\\s+(\\d+)',info.stdout)
+        if m: self.channel=int(m.group(1))
         self.hostapd=None
     def payload(self):
         return json.dumps({"v":1,"ssid":self.ssid,"psk":self.psk,"channel":self.channel,
