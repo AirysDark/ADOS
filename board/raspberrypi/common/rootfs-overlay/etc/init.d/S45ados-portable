@@ -1,13 +1,27 @@
 #!/bin/sh
 DAEMON=/usr/bin/ados-portabled
 PIDFILE=/run/ados/portable.pid
+LOG=/var/log/ados-portable.log
+
+wait_for_bluez() {
+  n=0
+  while [ "$n" -lt 15 ]; do
+    [ -S /run/dbus/system_bus_socket ] && command -v bluetoothctl >/dev/null 2>&1 && return 0
+    n=$((n + 1)); sleep 1
+  done
+  return 1
+}
 
 start() {
-  mkdir -p /run/ados /var/lib/ados/portable
-  [ -x "$DAEMON" ] || { echo "ADOS Portable daemon not installed"; return 0; }
+  mkdir -p /run/ados /var/lib/ados/portable /var/log
+  [ -x "$DAEMON" ] || { echo "ADOS Portable daemon not installed"; return 1; }
+  [ -x /usr/bin/ados-portable-gatt ] || { echo "ADOS Portable GATT helper not installed"; return 1; }
+  [ -f /etc/ados/portable.conf ] || { echo "ADOS Portable config missing"; return 1; }
   [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null && return 0
+  rfkill unblock bluetooth 2>/dev/null || true
+  wait_for_bluez || echo "Warning: BlueZ/D-Bus not ready; portable daemon will retry GATT helper"
   echo "Starting ADOS Portable Display..."
-  "$DAEMON" --config /etc/ados/portable.conf &
+  "$DAEMON" --config /etc/ados/portable.conf >>"$LOG" 2>&1 &
   echo $! > "$PIDFILE"
 }
 stop() {
@@ -15,6 +29,8 @@ stop() {
     kill "$(cat "$PIDFILE")" 2>/dev/null || true
     rm -f "$PIDFILE"
   fi
+  ip link set ados0 down 2>/dev/null || true
+  iw dev ados0 del 2>/dev/null || true
 }
 case "$1" in
  start) start ;;
