@@ -70,7 +70,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .cache
-          key: ados-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/build-ados.sh', 'kernel/**', 'board/**') }}
+          key: ados-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/build-ados.sh', 'kernel/**', 'board/**', 'portable/**') }}
           restore-keys: |
             ados-${{ runner.os }}-${{ matrix.target }}-
 
