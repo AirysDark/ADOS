@@ -4,6 +4,7 @@ set -euo pipefail
 BUILDROOT_VERSION="2025.02.18"
 RPI_KERNEL_REPO="https://github.com/AirysDark/linux.git"
 RPI_KERNEL_BRANCH="rpi-6.12.y"
+RPI_KERNEL_COMMIT="43c132e8863c3bff3647033b6a7d2bf87b15501c"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CACHE="${ADOS_CACHE:-$ROOT/.cache}"
 BR_DIR="$CACHE/buildroot-$BUILDROOT_VERSION"
@@ -67,7 +68,7 @@ BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$FRAGMENTS"
 # BR2_LINUX_KERNEL_CUSTOM_TARBALL is not set
 BR2_LINUX_KERNEL_CUSTOM_GIT=y
 BR2_LINUX_KERNEL_CUSTOM_REPO_URL="$RPI_KERNEL_REPO"
-BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION="$RPI_KERNEL_BRANCH"
+BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION="$RPI_KERNEL_COMMIT"
 EOF
 
 make -C "$BR_DIR" O="$OUT" olddefconfig
@@ -85,6 +86,7 @@ sha256sum "$OUT_BASE/$NAME.xz" > "$OUT_BASE/$NAME.xz.sha256"
   echo "Buildroot: $BUILDROOT_VERSION"
   echo "Kernel source: AirysDark/linux $RPI_KERNEL_BRANCH"
   echo "Kernel repository: $RPI_KERNEL_REPO"
+  echo "Kernel commit: $RPI_KERNEL_COMMIT"
   echo "Base defconfig: $BASE_DEFCONFIG"
   echo "Kernel fragments: $FRAGMENTS"
   echo "Portable source: portable/ (embedded automatically)"
