@@ -1,0 +1,10 @@
+# ADOS installer target mapping
+# CI target             Physical profile        Architecture
+rpi3-32                  rpi3b                   arm32
+rpi3-64                  rpi3b                   arm64
+rpi3b-b0-32              rpi3-frankenstein       arm32
+rpi3b-b0-64              rpi3-frankenstein       arm64
+rpi3bplus-32             rpi3bplus               arm32
+rpi3bplus-64             rpi3bplus               arm64
+rpi4-32                  rpi4                    arm32
+rpi4-64                  rpi4                    arm64
