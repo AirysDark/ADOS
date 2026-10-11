@@ -29,7 +29,9 @@ class Session:
         self.psk=secrets.token_urlsafe(24)
         self.ssid=f"{cfg.get('wifi','ssid_prefix',fallback='_ADOS-DISP-')}{self.sid[:6].upper()}"
         self.token=secrets.token_hex(32)
-        self.iface=cfg.get('wifi','interface',fallback='wlan0')
+        self.parent=cfg.get('wifi','parent_interface',fallback='wlan0')
+        self.iface=cfg.get('wifi','ap_interface',fallback='ados0')
+        self.created_iface=False
         self.port=cfg.getint('apdp','tcp_port',fallback=3047)
         self.host=cfg.get('wifi','host_address',fallback='10.77.0.1')
         self.channel=cfg.getint('wifi','channel',fallback=6)
@@ -53,6 +55,12 @@ wpa_passphrase={self.psk}
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 """)
+        if self.iface != self.parent:
+            sh("iw","dev",self.iface,"del",check=False)
+            add=sh("iw","dev",self.parent,"interface","add",self.iface,"type","__ap",check=False)
+            if add.returncode != 0:
+                raise RuntimeError(f"cannot create concurrent AP interface {self.iface} from {self.parent}: {add.stderr.strip()}")
+            self.created_iface=True
         sh("ip","link","set",self.iface,"up")
         sh("ip","addr","replace",f"{self.host}/30","dev",self.iface)
         self.hostapd=subprocess.Popen(["hostapd",str(conf)])
@@ -61,6 +69,9 @@ rsn_pairwise=CCMP
             self.hostapd.terminate()
             try:self.hostapd.wait(3)
             except subprocess.TimeoutExpired:self.hostapd.kill()
+        if self.created_iface:
+            sh("iw","dev",self.iface,"del",check=False)
+            self.created_iface=False
 
 def write_provision(session):
     """Atomic handoff consumed by the BLE GATT helper."""
